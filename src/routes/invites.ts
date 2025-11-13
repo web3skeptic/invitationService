@@ -1,23 +1,23 @@
 import express, { type Request, type Response } from 'express';
 import { inviteDb } from '../database.js';
-import { authMiddleware } from '../middleware/auth.js';
-import { checkInviteOnChain } from '../contract.js';
-import type { AddInviteRequest, CheckInviteRequest } from '../types.js';
+import { checkInviteOnChain, verifySecretMatchesAddress } from '../contract.js';
+import type { CheckInviteRequest } from '../types.js';
 
 const router = express.Router();
 
-// POST /addInvite - Add new secret to the DB (auth required)
-router.post('/addInvite', authMiddleware, (req: Request, res: Response): void => {
+// POST /addInvite - Add new secret to the DB (no auth required)
+router.post('/addInvite', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { secret, signer } = req.body as AddInviteRequest;
+    const { secret, address } = req.body as { secret: string; address: string };
 
+    // Validate inputs
     if (!secret) {
       res.status(400).json({ error: 'Secret is required' });
       return;
     }
 
-    if (!signer) {
-      res.status(400).json({ error: 'Signer is required' });
+    if (!address) {
+      res.status(400).json({ error: 'Address is required' });
       return;
     }
 
@@ -27,7 +27,33 @@ router.post('/addInvite', authMiddleware, (req: Request, res: Response): void =>
       return;
     }
 
-    const invite = inviteDb.addInvite(secret, signer);
+    // Validate that address is a hex string
+    if (!/^(0x)?[0-9a-fA-F]{40}$/.test(address)) {
+      res.status(400).json({ error: 'Address must be a valid Ethereum address' });
+      return;
+    }
+
+    // Verify that the secret matches the provided address
+    if (!verifySecretMatchesAddress(secret, address)) {
+      res.status(400).json({ error: 'Secret does not correspond to the provided address' });
+      return;
+    }
+
+    // Check if the address is valid and not used on the contract
+    const chainData = await checkInviteOnChain(address);
+
+    if (chainData.account === '0x0000000000000000000000000000000000000000') {
+      res.status(400).json({ error: 'Address does not exist on the contract' });
+      return;
+    }
+
+    if (chainData.claimed) {
+      res.status(400).json({ error: 'Address has already been used' });
+      return;
+    }
+
+    // Add the invite to the database
+    const invite = inviteDb.addInvite(secret, address);
 
     res.status(201).json({
       success: true,

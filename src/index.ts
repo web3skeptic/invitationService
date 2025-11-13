@@ -42,7 +42,7 @@ app.get('/health', (_req, res) => {
 app.listen(PORT, () => {
   console.log(`Invitation Service running on port ${PORT}`);
   console.log(`API endpoints:`);
-  console.log(`  POST /api/addInvite - Add new invite (requires x-api-key header)`);
+  console.log(`  POST /api/addInvite - Add new invite (secret + address, verified on-chain)`);
   console.log(`  GET  /api/getInvite - Get next available invite`);
   console.log(`  POST /api/checkInvite - Check and mark invite as used`);
 });

@@ -1,4 +1,5 @@
 import { createPublicClient, http, decodeAbiParameters, encodeFunctionData } from 'viem';
+import { privateKeyToAccount } from 'viem/accounts';
 
 const RPC_URL = process.env.RPC_URL || 'https://rpc.gnosischain.com';
 const REFERRAL_CONTRACT_ADDRESS = process.env.REFERRAL_CONTRACT_ADDRESS as `0x${string}`;
@@ -35,6 +36,29 @@ const ACCOUNTS_ABI = [
     ],
   },
 ] as const;
+
+/**
+ * Verify that a secret (private key) corresponds to a given address
+ * @param secret The private key (hex string)
+ * @param address The expected address derived from the secret
+ * @returns true if the secret derives to the given address
+ */
+export function verifySecretMatchesAddress(secret: string, address: string): boolean {
+  try {
+    // Ensure secret is properly formatted
+    const secretKey = (secret.startsWith('0x') ? secret : `0x${secret}`) as `0x${string}`;
+    const expectedAddress = (address.toLowerCase().startsWith('0x') ? address.toLowerCase() : `0x${address.toLowerCase()}`) as `0x${string}`;
+
+    // Derive the account from the private key
+    const account = privateKeyToAccount(secretKey);
+
+    // Compare the derived address with the expected address
+    return account.address.toLowerCase() === expectedAddress.toLowerCase();
+  } catch (error) {
+    console.error('Error verifying secret:', error);
+    return false;
+  }
+}
 
 /**
  * Check if an invite is used by calling the ReferralContract.accounts function
