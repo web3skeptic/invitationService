@@ -305,16 +305,16 @@
         };
 
         // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             UI.registerBtn.addEventListener('click', registerInvitation);
 
             // Check if there's already a stored secret
             const storedSecret = localStorage.getItem(STORAGE_KEY);
             if (storedSecret) {
-                displayStoredSecret(storedSecret);
+                await displayStoredSecret(storedSecret);
             } else {
                 // Auto-fetch if no stored secret
-                fetchNextInvitation();
+                await fetchNextInvitation();
             }
         });
 
@@ -377,12 +377,49 @@
             }
         }
 
-        function displayStoredSecret(secret) {
-            const invitationLink = `https://deploy-preview-2379.app.metri.xyz/referral/${secret}`;
-            UI.linkDisplay.textContent = invitationLink;
+        async function displayStoredSecret(secret) {
+            try {
+                setLoading(true);
+                // Check if the invitation has been claimed
+                const response = await fetch(`${API_BASE_URL}/api/checkInvite/${secret}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
 
-            UI.inviteSection.style.display = 'block';
-            UI.emptySection.style.display = 'none';
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                // Check if the invitation is already claimed
+                if (data.claimed || data.used) {
+                    showMessage('Sorry, the claimed invitation was already used. If you still have issues, please ask at the on-venue support or in the Telegram channel.', 'error');
+                    UI.inviteSection.style.display = 'none';
+                    UI.emptySection.style.display = 'none';
+                    return;
+                }
+
+                // If not claimed, display the invitation link
+                const invitationLink = `https://deploy-preview-2379.app.metri.xyz/referral/${secret}`;
+                UI.linkDisplay.textContent = invitationLink;
+
+                UI.inviteSection.style.display = 'block';
+                UI.emptySection.style.display = 'none';
+                showMessage('Your invitation link is ready!', 'success');
+            } catch (error) {
+                console.error('Error checking invitation status:', error);
+                // If we can't check status, show the link anyway as fallback
+                const invitationLink = `https://deploy-preview-2379.app.metri.xyz/referral/${secret}`;
+                UI.linkDisplay.textContent = invitationLink;
+                UI.inviteSection.style.display = 'block';
+                UI.emptySection.style.display = 'none';
+            } finally {
+                setLoading(false);
+            }
         }
 
         function registerInvitation() {

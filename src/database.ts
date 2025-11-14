@@ -45,7 +45,7 @@ export class InviteDatabase {
     return row;
   }
 
-  // Get the next available invite (prefer 'none', fallback to oldest 'pending')
+  // Get the next available invite (prefer 'none', fallback to oldest 'pending' if > 5 mins old)
   getNextInvite(): Invite | null {
     // First try to get an invite with status 'none'
     const stmtNone = db.prepare(`
@@ -63,10 +63,11 @@ export class InviteDatabase {
       return this.getInviteById(noneRow.id);
     }
 
-    // If no 'none' invites, get the oldest 'pending' invite
+    // If no 'none' invites, get the oldest 'pending' invite that is more than 5 minutes old
     const stmtPending = db.prepare(`
       SELECT * FROM invites
       WHERE status = ?
+      AND datetime(updateDate) <= datetime('now', '-5 minutes')
       ORDER BY updateDate ASC
       LIMIT 1
     `);
