@@ -291,7 +291,7 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'https://138.68.64.24:3400';
+        const API_BASE_URL = 'https://unveracious-nonintroverted-deana.ngrok-free.dev';
         const STORAGE_KEY = 'invitationSecret';
 
         const UI = {
@@ -342,7 +342,8 @@
                 const response = await fetch(`${API_BASE_URL}/api/getInvite`, {
                     method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
                     }
                 });
 
