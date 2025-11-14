@@ -1,5 +1,8 @@
 import 'dotenv/config.js';
 import express from 'express';
+import https from 'https';
+import fs from 'fs';
+import path from 'path';
 import inviteRoutes from './routes/invites.js';
 import { inviteDb } from './database.js';
 
@@ -38,11 +41,35 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Invitation Service running on port ${PORT}`);
-  console.log(`API endpoints:`);
-  console.log(`  POST /api/addInvite - Add new invite (secret + address, verified on-chain)`);
-  console.log(`  GET  /api/getInvite - Get next available invite`);
-  console.log(`  POST /api/checkInvite - Check and mark invite as used`);
-});
+// Start HTTPS server
+const certPath = path.join(process.cwd(), 'selfsigned.crt');
+const keyPath = path.join(process.cwd(), 'selfsigned.key');
+
+try {
+  const cert = fs.readFileSync(certPath, 'utf8');
+  const key = fs.readFileSync(keyPath, 'utf8');
+
+  const httpsOptions = {
+    cert,
+    key,
+  };
+
+  https.createServer(httpsOptions, app).listen(PORT, () => {
+    console.log(`Invitation Service running on https://localhost:${PORT}`);
+    console.log(`API endpoints:`);
+    console.log(`  POST /api/addInvite - Add new invite (secret + address, verified on-chain)`);
+    console.log(`  GET  /api/getInvite - Get next available invite`);
+    console.log(`  POST /api/checkInvite - Check and mark invite as used`);
+  });
+} catch (error) {
+  console.error('Error loading SSL certificates:', error);
+  console.log('Falling back to HTTP server...');
+
+  app.listen(PORT, () => {
+    console.log(`Invitation Service running on http://localhost:${PORT}`);
+    console.log(`API endpoints:`);
+    console.log(`  POST /api/addInvite - Add new invite (secret + address, verified on-chain)`);
+    console.log(`  GET  /api/getInvite - Get next available invite`);
+    console.log(`  POST /api/checkInvite - Check and mark invite as used`);
+  });
+}
