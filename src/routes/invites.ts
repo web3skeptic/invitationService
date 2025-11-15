@@ -77,8 +77,29 @@ router.post('/addInvite', async (req: Request, res: Response): Promise<void> => 
 });
 
 // GET /getInvite - Returns the next secret and updates status to pending
-router.get('/getInvite', async (_req: Request, res: Response): Promise<void> => {
+router.get('/getInvite', async (req: Request, res: Response): Promise<void> => {
   try {
+    // Verify security key
+    const expectedKey = process.env.INVITE_API_KEY;
+
+    if (!expectedKey) {
+      console.error('Error: INVITE_API_KEY environment variable is not set');
+      res.status(500).json({ error: 'Server configuration error' });
+      return;
+    }
+
+    const providedKey = req.headers['x-api-key'] || req.query.key;
+
+    if (!providedKey) {
+      res.status(401).json({ error: 'API key is required' });
+      return;
+    }
+
+    if (providedKey !== expectedKey) {
+      res.status(403).json({ error: 'Invalid API key' });
+      return;
+    }
+
     const invite = inviteDb.getNextInvite();
 
     if (!invite) {

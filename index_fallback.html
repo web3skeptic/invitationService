@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invitation Service - QR Code</title>
+    <script src="https://davidshimjs.github.io/qrcodejs/qrcode.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
+        .qr-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+        }
+
+        #qrcode {
+            display: flex;
+            justify-content: center;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+
+        .message.error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+
+        .message.info {
+            background: #e3f2fd;
+            color: #1565c0;
+            border-left: 4px solid #2196f3;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            font-weight: 600;
+            margin: 40px 0;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-direction: column;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .link-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #666;
+            word-break: break-all;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .qr-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎟️ Invitation Service</h1>
+
+        <!-- Messages -->
+        <div id="message" class="message"></div>
+
+        <!-- Loading State -->
+        <div id="loading" class="loading">
+            <span class="spinner"></span>Loading invitation...
+        </div>
+
+        <!-- API Key Input Section -->
+        <div id="keySection">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #667eea; margin-bottom: 20px;">Enter API Key</h2>
+                <div style="max-width: 300px; margin: 0 auto;">
+                    <input type="password" id="apiKeyInput" placeholder="Enter API key" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 15px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary" id="submitKeyBtn" style="flex: 1;">Submit Key</button>
+                        <button class="btn-secondary" id="clearKeyBtn" style="flex: 1;">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Container -->
+        <div id="qrSection" style="display: none;">
+            <div class="qr-container">
+                <div id="qrcode"></div>
+            </div>
+            <div class="link-info" id="linkInfo"></div>
+            <div class="button-group">
+                <button class="btn-primary" id="generateBtn">Generate Next Invitation</button>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptySection" style="display: none;">
+            <div class="empty-state">
+                <p>📭 No invitations available</p>
+                <p style="font-size: 12px; margin-top: 10px; color: #ccc;">All invitations have been claimed</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://unveracious-nonintroverted-deana.ngrok-free.dev';
+        const API_KEY_STORAGE = 'invitationApiKey';
+
+        let API_KEY = null;
+
+        const UI = {
+            message: document.getElementById('message'),
+            loading: document.getElementById('loading'),
+            qrSection: document.getElementById('qrSection'),
+            emptySection: document.getElementById('emptySection'),
+            keySection: document.getElementById('keySection'),
+            generateBtn: document.getElementById('generateBtn'),
+            qrcode: document.getElementById('qrcode'),
+            linkInfo: document.getElementById('linkInfo'),
+            apiKeyInput: document.getElementById('apiKeyInput'),
+            submitKeyBtn: document.getElementById('submitKeyBtn'),
+            clearKeyBtn: document.getElementById('clearKeyBtn')
+        };
+
+        let currentInvite = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            UI.generateBtn.addEventListener('click', generateNextInvitation);
+            UI.submitKeyBtn.addEventListener('click', submitApiKey);
+            UI.clearKeyBtn.addEventListener('click', clearApiKey);
+
+            // Check if API key is already saved
+            const savedKey = localStorage.getItem(API_KEY_STORAGE);
+            if (savedKey) {
+                API_KEY = savedKey;
+                UI.keySection.style.display = 'none';
+                await fetchNextInvitation();
+            } else {
+                // Show key input section
+                UI.keySection.style.display = 'block';
+                UI.qrSection.style.display = 'none';
+                UI.emptySection.style.display = 'none';
+            }
+        });
+
+        async function submitApiKey() {
+            const key = UI.apiKeyInput.value.trim();
+            if (!key) {
+                showMessage('Please enter an API key', 'error');
+                return;
+            }
+
+            API_KEY = key;
+            localStorage.setItem(API_KEY_STORAGE, key);
+            UI.keySection.style.display = 'none';
+            showMessage('API key saved successfully!', 'success');
+
+            // Fetch the first invitation
+            await fetchNextInvitation();
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem(API_KEY_STORAGE);
+            API_KEY = null;
+            UI.apiKeyInput.value = '';
+            UI.keySection.style.display = 'block';
+            UI.qrSection.style.display = 'none';
+            UI.emptySection.style.display = 'none';
+            showMessage('Saved data cleared', 'info');
+        }
+
+        function showMessage(text, type = 'info') {
+            UI.message.textContent = text;
+            UI.message.className = `message show ${type}`;
+            if (type !== 'error') {
+                setTimeout(() => {
+                    UI.message.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        function setLoading(isLoading) {
+            if (isLoading) {
+                UI.loading.classList.add('show');
+            } else {
+                UI.loading.classList.remove('show');
+            }
+        }
+
+        function generateQRCode(link) {
+            // Clear previous QR code
+            UI.qrcode.innerHTML = '';
+
+            // Generate new QR code
+            new QRCode(UI.qrcode, {
+                text: link,
+                width: 300,
+                height: 300,
+                colorDark: '#333333',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
+        async function fetchNextInvitation() {
+            try {
+                setLoading(true);
+                const response = await fetch(`${API_BASE_URL}/api/getInvite?key=${encodeURIComponent(API_KEY)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        showMessage('No available invitations', 'info');
+                        UI.qrSection.style.display = 'none';
+                        UI.emptySection.style.display = 'block';
+                        return;
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                const secret = data.invite.secret;
+                currentInvite = data.invite;
+
+                // Generate the invitation link
+                const invitationLink = `https://deploy-preview-2379.app.metri.xyz/referral/${secret}`;
+
+                // Generate QR code
+                generateQRCode(invitationLink);
+
+                // Display link info
+                UI.linkInfo.textContent = `Link: ${invitationLink}`;
+
+                // Show sections
+                UI.qrSection.style.display = 'block';
+                UI.emptySection.style.display = 'none';
+                showMessage('New invitation generated!', 'success');
+            } catch (error) {
+                console.error('Error fetching invitation:', error);
+                showMessage(`Error: ${error.message}. Make sure the API server is running.`, 'error');
+                UI.qrSection.style.display = 'none';
+                UI.emptySection.style.display = 'none';
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function generateNextInvitation() {
+            await fetchNextInvitation();
+        }
+    </script>
+</body>
+</html>

@@ -118,7 +118,8 @@
             margin-top: 20px;
         }
 
-        button {
+        button,
+        a.btn-primary {
             flex: 1;
             padding: 12px 20px;
             border: none;
@@ -129,6 +130,10 @@
             transition: all 0.3s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
         }
 
         .btn-primary {
@@ -272,11 +277,26 @@
 
         <!-- Invitation Display -->
         <div id="invitationContent">
+            <!-- Section: API Key Input -->
+            <div class="section" id="keySection">
+                <div class="section-title">🔐 Setup</div>
+                <div class="info-box">
+                    <div class="info-row">
+                        <label class="info-label">API Key</label>
+                        <input type="password" id="apiKeyInput" placeholder="Enter API key" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    </div>
+                    <div class="button-group" style="margin-top: 15px; margin-bottom: 0;">
+                        <button class="btn-primary" id="submitKeyBtn">Submit Key</button>
+                        <button class="btn-secondary" id="clearKeyBtn">Clear Saved Key</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Section: Invitation Link -->
             <div class="section" id="inviteSection" style="display: none;">
                 <div id="linkDisplay" style="display: none;"></div>
                 <div class="button-group">
-                    <button class="btn-primary" id="registerBtn">Register Invitation</button>
+                    <a id="registerBtn" class="btn-primary">Calim Available Invitation</a>
                 </div>
             </div>
 
@@ -293,6 +313,9 @@
     <script>
         const API_BASE_URL = 'https://unveracious-nonintroverted-deana.ngrok-free.dev';
         const STORAGE_KEY = 'invitationSecret';
+        const API_KEY_STORAGE = 'invitationApiKey';
+
+        let API_KEY = null;
 
         const UI = {
             invitationContent: document.getElementById('invitationContent'),
@@ -301,22 +324,67 @@
             registerBtn: document.getElementById('registerBtn'),
             inviteSection: document.getElementById('inviteSection'),
             emptySection: document.getElementById('emptySection'),
-            linkDisplay: document.getElementById('linkDisplay')
+            linkDisplay: document.getElementById('linkDisplay'),
+            keySection: document.getElementById('keySection'),
+            apiKeyInput: document.getElementById('apiKeyInput'),
+            submitKeyBtn: document.getElementById('submitKeyBtn'),
+            clearKeyBtn: document.getElementById('clearKeyBtn')
         };
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             UI.registerBtn.addEventListener('click', registerInvitation);
+            UI.submitKeyBtn.addEventListener('click', submitApiKey);
+            UI.clearKeyBtn.addEventListener('click', clearApiKey);
 
-            // Check if there's already a stored secret
-            const storedSecret = localStorage.getItem(STORAGE_KEY);
-            if (storedSecret) {
-                await displayStoredSecret(storedSecret);
+            // Check if API key is already saved
+            const savedKey = localStorage.getItem(API_KEY_STORAGE);
+            if (savedKey) {
+                API_KEY = savedKey;
+                UI.keySection.style.display = 'none';
+
+                // Check if there's already a stored secret
+                const storedSecret = localStorage.getItem(STORAGE_KEY);
+                if (storedSecret) {
+                    await displayStoredSecret(storedSecret);
+                } else {
+                    // Auto-fetch if no stored secret
+                    await fetchNextInvitation();
+                }
             } else {
-                // Auto-fetch if no stored secret
-                await fetchNextInvitation();
+                // Show key input section
+                UI.keySection.style.display = 'block';
+                UI.inviteSection.style.display = 'none';
+                UI.emptySection.style.display = 'none';
             }
         });
+
+        async function submitApiKey() {
+            const key = UI.apiKeyInput.value.trim();
+            if (!key) {
+                showMessage('Please enter an API key', 'error');
+                return;
+            }
+
+            API_KEY = key;
+            localStorage.setItem(API_KEY_STORAGE, key);
+            UI.keySection.style.display = 'none';
+            showMessage('API key saved successfully!', 'success');
+
+            // Fetch the first invitation
+            await fetchNextInvitation();
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem(API_KEY_STORAGE);
+            localStorage.removeItem(STORAGE_KEY);
+            API_KEY = null;
+            UI.apiKeyInput.value = '';
+            UI.keySection.style.display = 'block';
+            UI.inviteSection.style.display = 'none';
+            UI.emptySection.style.display = 'none';
+            showMessage('Saved data cleared', 'info');
+        }
 
         function showMessage(text, type = 'info') {
             UI.message.textContent = text;
@@ -339,7 +407,7 @@
         async function fetchNextInvitation() {
             try {
                 setLoading(true);
-                const response = await fetch(`${API_BASE_URL}/api/getInvite`, {
+                const response = await fetch(`${API_BASE_URL}/api/getInvite?key=${encodeURIComponent(API_KEY)}`, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -397,7 +465,7 @@
 
                 // Check if the invitation is already claimed
                 if (data.claimed || data.used) {
-                    showMessage('Sorry, the claimed invitation was already used. If you still have issues, please ask at the on-venue support or in the Telegram channel.', 'error');
+                    showMessage('Sorry, the claimed invitation was already used. If you still have issues, please ask at the on-venue support.', 'error');
                     UI.inviteSection.style.display = 'none';
                     UI.emptySection.style.display = 'none';
                     return;
@@ -406,15 +474,18 @@
                 // If not claimed, display the invitation link
                 const invitationLink = `https://deploy-preview-2379.app.metri.xyz/referral/${secret}`;
                 UI.linkDisplay.textContent = invitationLink;
+                UI.registerBtn.href = invitationLink;
 
                 UI.inviteSection.style.display = 'block';
                 UI.emptySection.style.display = 'none';
                 showMessage('Your invitation link is ready!', 'success');
             } catch (error) {
                 console.error('Error checking invitation status:', error);
+                
                 // If we can't check status, show the link anyway as fallback
                 const invitationLink = `https://deploy-preview-2379.app.metri.xyz/referral/${secret}`;
                 UI.linkDisplay.textContent = invitationLink;
+                UI.registerBtn.href = invitationLink;
                 UI.inviteSection.style.display = 'block';
                 UI.emptySection.style.display = 'none';
             } finally {
@@ -423,8 +494,7 @@
         }
 
         function registerInvitation() {
-            const linkText = UI.linkDisplay.textContent;
-            window.location.href = linkText;
+            // The href is already set, the anchor tag will navigate naturally
         }
     </script>
 </body>
