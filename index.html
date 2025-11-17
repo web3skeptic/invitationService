@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invitation Service</title>
+    <title>Invitation Service - QR Code</title>
+    <script src="https://davidshimjs.github.io/qrcodejs/qrcode.js"></script>
     <style>
         * {
             margin: 0;
@@ -25,150 +26,31 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
+            max-width: 500px;
             width: 100%;
             padding: 40px;
+            text-align: center;
         }
 
         h1 {
             color: #333;
             margin-bottom: 30px;
-            text-align: center;
             font-size: 28px;
         }
 
-        .section {
-            margin-bottom: 30px;
-        }
-
-        .section-title {
-            color: #667eea;
-            font-size: 14px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-badge {
+        .qr-container {
+            position: relative;
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .status-badge.none {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .status-badge.pending {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-
-        .status-badge.used {
-            background: #e8f5e9;
-            color: #388e3c;
-        }
-
-        .info-box {
-            background: #f9f9f9;
+            margin-bottom: 30px;
             padding: 20px;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-            margin-bottom: 15px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
         }
 
-        .info-row {
-            margin-bottom: 15px;
-        }
-
-        .info-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .info-label {
-            color: #666;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-            display: block;
-        }
-
-        .info-value {
-            color: #333;
-            font-size: 14px;
-            font-family: 'Courier New', monospace;
-            word-break: break-all;
-            background: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .button-group {
+        #qrcode {
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        button,
-        a.btn-primary {
-            flex: 1;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-flex;
-            align-items: center;
             justify-content: center;
-            text-decoration: none;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-            border: 1px solid #ddd;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-
-        .btn-secondary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
         }
 
         .message {
@@ -206,6 +88,7 @@
             text-align: center;
             color: #667eea;
             font-weight: 600;
+            margin: 40px 0;
         }
 
         .loading.show {
@@ -229,6 +112,60 @@
             100% { transform: rotate(360deg); }
         }
 
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-direction: column;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex: 1;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e0e0e0;
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px 20px;
@@ -242,10 +179,14 @@
             opacity: 0.5;
         }
 
-        .timestamp {
-            color: #999;
+        .link-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 6px;
             font-size: 12px;
-            margin-top: 5px;
+            color: #666;
+            word-break: break-all;
         }
 
         @media (max-width: 600px) {
@@ -257,8 +198,8 @@
                 font-size: 24px;
             }
 
-            .button-group {
-                flex-direction: column;
+            .qr-container {
+                padding: 15px;
             }
         }
     </style>
@@ -275,65 +216,65 @@
             <span class="spinner"></span>Loading invitation...
         </div>
 
-        <!-- Invitation Display -->
-        <div id="invitationContent">
-            <!-- Section: API Key Input -->
-            <div class="section" id="keySection">
-                <div class="section-title">🔐 Setup</div>
-                <div class="info-box">
-                    <div class="info-row">
-                        <label class="info-label">API Key</label>
-                        <input type="password" id="apiKeyInput" placeholder="Enter API key" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                    </div>
-                    <div class="button-group" style="margin-top: 15px; margin-bottom: 0;">
-                        <button class="btn-primary" id="submitKeyBtn">Submit Key</button>
-                        <button class="btn-secondary" id="clearKeyBtn">Clear Saved Key</button>
+        <!-- API Key Input Section -->
+        <div id="keySection">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #667eea; margin-bottom: 20px;">Enter API Key</h2>
+                <div style="max-width: 300px; margin: 0 auto;">
+                    <input type="password" id="apiKeyInput" placeholder="Enter API key" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; margin-bottom: 15px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary" id="submitKeyBtn" style="flex: 1;">Submit Key</button>
+                        <button class="btn-secondary" id="clearKeyBtn" style="flex: 1;">Clear</button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Section: Invitation Link -->
-            <div class="section" id="inviteSection" style="display: none;">
-                <div id="linkDisplay" style="display: none;"></div>
-                <div class="button-group">
-                    <a id="registerBtn" class="btn-primary">Calim Available Invitation</a>
-                </div>
+        <!-- QR Code Container -->
+        <div id="qrSection" style="display: none;">
+            <div class="qr-container">
+                <div id="qrcode"></div>
             </div>
+            <div class="link-info" id="linkInfo"></div>
+            <div class="button-group">
+                <button class="btn-primary" id="generateBtn">Generate Next Invitation</button>
+            </div>
+        </div>
 
-            <!-- Section: Empty State -->
-            <div class="section" id="emptySection" style="display: none;">
-                <div class="empty-state">
-                    <p>📭 No invitations available</p>
-                    <p style="font-size: 12px; margin-top: 10px; color: #ccc;">All invitations have been fetched</p>
-                </div>
+        <!-- Empty State -->
+        <div id="emptySection" style="display: none;">
+            <div class="empty-state">
+                <p>📭 No invitations available</p>
+                <p style="font-size: 12px; margin-top: 10px; color: #ccc;">All invitations have been claimed</p>
             </div>
         </div>
     </div>
 
     <script>
         const API_BASE_URL = 'https://unveracious-nonintroverted-deana.ngrok-free.dev';
-        const STORAGE_KEY = 'invitationSecret';
         const API_KEY_STORAGE = 'invitationApiKey';
 
         let API_KEY = null;
 
         const UI = {
-            invitationContent: document.getElementById('invitationContent'),
-            loading: document.getElementById('loading'),
             message: document.getElementById('message'),
-            registerBtn: document.getElementById('registerBtn'),
-            inviteSection: document.getElementById('inviteSection'),
+            loading: document.getElementById('loading'),
+            qrSection: document.getElementById('qrSection'),
             emptySection: document.getElementById('emptySection'),
-            linkDisplay: document.getElementById('linkDisplay'),
             keySection: document.getElementById('keySection'),
+            generateBtn: document.getElementById('generateBtn'),
+            qrcode: document.getElementById('qrcode'),
+            linkInfo: document.getElementById('linkInfo'),
             apiKeyInput: document.getElementById('apiKeyInput'),
             submitKeyBtn: document.getElementById('submitKeyBtn'),
             clearKeyBtn: document.getElementById('clearKeyBtn')
         };
 
+        let currentInvite = null;
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
-            UI.registerBtn.addEventListener('click', registerInvitation);
+            UI.generateBtn.addEventListener('click', generateNextInvitation);
             UI.submitKeyBtn.addEventListener('click', submitApiKey);
             UI.clearKeyBtn.addEventListener('click', clearApiKey);
 
@@ -342,19 +283,11 @@
             if (savedKey) {
                 API_KEY = savedKey;
                 UI.keySection.style.display = 'none';
-
-                // Check if there's already a stored secret
-                const storedSecret = localStorage.getItem(STORAGE_KEY);
-                if (storedSecret) {
-                    await displayStoredSecret(storedSecret);
-                } else {
-                    // Auto-fetch if no stored secret
-                    await fetchNextInvitation();
-                }
+                await fetchNextInvitation();
             } else {
                 // Show key input section
                 UI.keySection.style.display = 'block';
-                UI.inviteSection.style.display = 'none';
+                UI.qrSection.style.display = 'none';
                 UI.emptySection.style.display = 'none';
             }
         });
@@ -377,11 +310,10 @@
 
         function clearApiKey() {
             localStorage.removeItem(API_KEY_STORAGE);
-            localStorage.removeItem(STORAGE_KEY);
             API_KEY = null;
             UI.apiKeyInput.value = '';
             UI.keySection.style.display = 'block';
-            UI.inviteSection.style.display = 'none';
+            UI.qrSection.style.display = 'none';
             UI.emptySection.style.display = 'none';
             showMessage('Saved data cleared', 'info');
         }
@@ -404,6 +336,21 @@
             }
         }
 
+        function generateQRCode(link) {
+            // Clear previous QR code
+            UI.qrcode.innerHTML = '';
+
+            // Generate new QR code
+            new QRCode(UI.qrcode, {
+                text: link,
+                width: 300,
+                height: 300,
+                colorDark: '#333333',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+        }
+
         async function fetchNextInvitation() {
             try {
                 setLoading(true);
@@ -418,7 +365,7 @@
                 if (!response.ok) {
                     if (response.status === 404) {
                         showMessage('No available invitations', 'info');
-                        UI.inviteSection.style.display = 'none';
+                        UI.qrSection.style.display = 'none';
                         UI.emptySection.style.display = 'block';
                         return;
                     }
@@ -427,74 +374,33 @@
 
                 const data = await response.json();
                 const secret = data.invite.secret;
+                currentInvite = data.invite;
 
-                // Store the secret in localStorage
-                localStorage.setItem(STORAGE_KEY, secret);
+                // Generate the invitation link
+                const invitationLink = `https://deploy-preview-2379.app.metri.xyz/referral/${secret}`;
 
-                displayStoredSecret(secret);
-                showMessage('Invitation link created successfully!', 'success');
-                UI.inviteSection.style.display = 'block';
+                // Generate QR code
+                generateQRCode(invitationLink);
+
+                // Display link info
+                UI.linkInfo.textContent = `Link: ${invitationLink}`;
+
+                // Show sections
+                UI.qrSection.style.display = 'block';
                 UI.emptySection.style.display = 'none';
+                showMessage('New invitation generated!', 'success');
             } catch (error) {
                 console.error('Error fetching invitation:', error);
                 showMessage(`Error: ${error.message}. Make sure the API server is running.`, 'error');
-                UI.inviteSection.style.display = 'none';
+                UI.qrSection.style.display = 'none';
                 UI.emptySection.style.display = 'none';
             } finally {
                 setLoading(false);
             }
         }
 
-        async function displayStoredSecret(secret) {
-            try {
-                setLoading(true);
-                // Check if the invitation has been claimed
-                const response = await fetch(`${API_BASE_URL}/api/checkInvite/${secret}`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                // Check if the invitation is already claimed
-                if (data.claimed || data.used) {
-                    showMessage('Sorry, the claimed invitation was already used. If you still have issues, please ask at the on-venue support.', 'error');
-                    UI.inviteSection.style.display = 'none';
-                    UI.emptySection.style.display = 'none';
-                    return;
-                }
-
-                // If not claimed, display the invitation link
-                const invitationLink = `https://deploy-preview-2379.app.metri.xyz/referral/${secret}`;
-                UI.linkDisplay.textContent = invitationLink;
-                UI.registerBtn.href = invitationLink;
-
-                UI.inviteSection.style.display = 'block';
-                UI.emptySection.style.display = 'none';
-                showMessage('Your invitation link is ready!', 'success');
-            } catch (error) {
-                console.error('Error checking invitation status:', error);
-                
-                // If we can't check status, show the link anyway as fallback
-                const invitationLink = `https://deploy-preview-2379.app.metri.xyz/referral/${secret}`;
-                UI.linkDisplay.textContent = invitationLink;
-                UI.registerBtn.href = invitationLink;
-                UI.inviteSection.style.display = 'block';
-                UI.emptySection.style.display = 'none';
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        function registerInvitation() {
-            // The href is already set, the anchor tag will navigate naturally
+        async function generateNextInvitation() {
+            await fetchNextInvitation();
         }
     </script>
 </body>
